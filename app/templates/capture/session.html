@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Capture{% endblock %}
 {% block nav_capture %}active{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="/static/css/capture.css">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/capture.css?v=2">{% endblock %}
 
 {% block content %}
 <h1>Capture Items</h1>
@@ -22,20 +22,29 @@
     <!-- Mode Toggle -->
     <div class="mode-toggle">
         <input type="radio" name="mode" id="mode-video" value="video" checked>
-        <label for="mode-video">Video Walkthrough</label>
+        <label for="mode-video">Video</label>
         <input type="radio" name="mode" id="mode-image" value="image">
-        <label for="mode-image">Image Capture</label>
+        <label for="mode-image">Image</label>
+        <input type="radio" name="mode" id="mode-rapid" value="rapid">
+        <label for="mode-rapid">Rapid Capture</label>
     </div>
 
     <!-- Video Mode -->
     <div id="video-mode">
         <div class="video-preview" id="video-preview">
             <video id="camera-feed" autoplay playsinline muted></video>
+            <canvas id="detection-overlay"></canvas>
             <div id="audio-indicator" class="audio-indicator" style="display:none">
                 <span class="mic-icon"></span>
                 <span class="mic-label">Recording audio</span>
             </div>
             <div class="video-controls">
+                <button class="detect-btn" id="detect-btn" title="Detect Objects">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <span>Detect</span>
+                </button>
                 <button class="record-btn" id="record-btn" title="Start/Stop Recording"></button>
             </div>
         </div>
@@ -54,6 +63,26 @@
             <p>Tap to take photo or upload</p>
             <input type="file" id="image-input" accept="image/*" capture="camera">
         </div>
+    </div>
+
+    <!-- Rapid Capture Mode -->
+    <div id="rapid-mode" style="display:none">
+        <div class="video-preview" id="rapid-preview">
+            <video id="rapid-camera-feed" autoplay playsinline muted></video>
+            <div id="rapid-audio-indicator" class="audio-indicator" style="display:none">
+                <span class="mic-icon"></span>
+                <span class="mic-label">Recording audio</span>
+            </div>
+            <div class="rapid-controls">
+                <div class="snap-counter" id="snap-counter">0 photos</div>
+                <button class="snap-btn" id="snap-btn" title="Take Photo"></button>
+                <button class="rapid-done-btn" id="rapid-done-btn" style="display:none">Done</button>
+            </div>
+        </div>
+        <div class="snap-strip" id="snap-strip"></div>
+        <p class="text-muted" style="font-size:0.8rem; text-align:center; margin-top:8px">
+            Tap the shutter to snap photos of items. Narrate as you go. Tap Done when finished.
+        </p>
     </div>
 
     <!-- Processing indicator -->
@@ -75,5 +104,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/capture.js"></script>
+<script src="/static/js/capture.js?v=2"></script>
 {% endblock %}

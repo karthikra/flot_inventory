@@ -22,6 +22,7 @@ async def lifespan(app: FastAPI):
     Path("data/videos").mkdir(parents=True, exist_ok=True)
     Path("data/frames").mkdir(parents=True, exist_ok=True)
     Path("data/audio").mkdir(parents=True, exist_ok=True)
+    Path("data/rapid").mkdir(parents=True, exist_ok=True)
 
     yield
 

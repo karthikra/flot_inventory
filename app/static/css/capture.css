@@ -1,8 +1,17 @@
+/* Capture page: override content max-width for full-bleed camera */
+.content:has(.capture-container) {
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+}
+
 /* Capture page styles */
 .capture-container {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    padding: 0 12px;
 }
 
 .mode-toggle {
@@ -36,10 +45,12 @@
 
 /* Video preview area */
 .video-preview {
-    width: 100%;
-    aspect-ratio: 16/9;
+    width: 100vw;
+    height: 80vh;
+    margin-left: -12px;
+    margin-right: -12px;
     background: var(--bg-secondary);
-    border-radius: var(--radius);
+    border-radius: 0;
     overflow: hidden;
     position: relative;
 }
@@ -56,10 +67,13 @@
     left: 0;
     right: 0;
     padding: 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
     background: linear-gradient(transparent, rgba(0,0,0,0.7));
     display: flex;
     justify-content: center;
-    gap: 12px;
+    align-items: center;
+    gap: 16px;
+    z-index: 10;
 }
 
 .record-btn {
@@ -85,6 +99,52 @@
 .record-btn.recording::after {
     border-radius: 4px;
     inset: 14px;
+}
+
+/* Detection overlay canvas */
+#detection-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Detect button */
+.detect-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 24px;
+    border: 2px solid white;
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    backdrop-filter: blur(4px);
+}
+
+.detect-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.detect-btn.detecting {
+    border-color: var(--accent);
+    color: var(--accent);
+    pointer-events: none;
+}
+
+.detect-btn.detecting svg {
+    animation: spin 1s linear infinite;
+}
+
+.detect-btn svg {
+    flex-shrink: 0;
 }
 
 /* Image upload area */
@@ -177,6 +237,140 @@
 @keyframes mic-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
+}
+
+/* --- Rapid Capture Mode --- */
+#rapid-mode .video-preview {
+    width: 100vw;
+    height: 80vh;
+    margin-left: -12px;
+    margin-right: -12px;
+}
+
+#rapid-mode .video-preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.rapid-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    z-index: 10;
+}
+
+.snap-btn {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 4px solid white;
+    background: rgba(255, 255, 255, 0.25);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    position: relative;
+}
+
+.snap-btn::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 0.1s ease;
+}
+
+.snap-btn:active,
+.snap-btn.snap-flash {
+    transform: scale(0.9);
+}
+
+.snap-btn.snap-flash::after {
+    transform: scale(0.85);
+}
+
+.snap-counter {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+    min-width: 80px;
+    text-align: center;
+}
+
+.rapid-done-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 24px;
+    border: none;
+    background: var(--accent);
+    color: var(--bg-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.rapid-done-btn:hover {
+    opacity: 0.9;
+}
+
+/* Snap thumbnail strip */
+.snap-strip {
+    display: flex;
+    gap: 8px;
+    padding: 8px 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.snap-strip::-webkit-scrollbar {
+    display: none;
+}
+
+.snap-thumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+}
+
+.snap-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.snap-thumb-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: var(--accent);
+    color: var(--bg-primary);
+    font-size: 0.65rem;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Room mentions card */

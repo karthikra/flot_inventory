@@ -1,19 +1,40 @@
 import asyncio
 import json
+import os
+import tempfile
 
 from fastapi import APIRouter, Depends, Request, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
 from app.database import get_session
 from app.schemas.capture import CaptureConfirmItem, CaptureConfirmRequest
+from app.services.local_vision import LocalVisionService
 from app.viewmodels.capture_vm import CaptureViewModel
 
 router = APIRouter(prefix="/capture")
 
 # in-memory storage for SSE progress (per session)
 _progress_queues: dict[int, asyncio.Queue] = {}
+
+
+@router.post("/detect")
+async def detect_objects(file: UploadFile):
+    """Lightweight endpoint: accept an image, return detected objects as JSON."""
+    image_data = await file.read()
+    suffix = ".jpg" if "jpeg" in (file.content_type or "") else ".png"
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp.write(image_data)
+        tmp_path = tmp.name
+
+    vision = LocalVisionService()
+    detected = await vision.analyze_frame(tmp_path)
+
+    os.unlink(tmp_path)
+
+    return JSONResponse([obj.model_dump() for obj in detected])
 
 
 @router.get("/")
@@ -111,6 +132,74 @@ async def upload_image(
             "session_id": session_id,
             "room_id": room_id,
             "source_image": image_path,
+        },
+    )
+
+
+@router.post("/rapid")
+async def upload_rapid_capture(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    form = await request.form()
+    session_id = int(form["session_id"])
+    room_id = int(form["room_id"])
+
+    # Collect snap images: snaps[0], snaps[1], ...
+    snap_images: list[bytes] = []
+    idx = 0
+    while True:
+        snap_file = form.get(f"snaps[{idx}]")
+        if snap_file is None:
+            break
+        snap_images.append(await snap_file.read())
+        idx += 1
+
+    # Parse timestamps JSON
+    timestamps_raw = form.get("timestamps", "[]")
+    timestamps: list[float] = json.loads(timestamps_raw)
+
+    # Optional audio blob
+    audio_data = None
+    audio_file = form.get("audio")
+    if audio_file and hasattr(audio_file, "read"):
+        audio_data = await audio_file.read()
+
+    # Get room name for context
+    from app.repositories.room_repo import RoomRepository
+    room_repo = RoomRepository(session)
+    room = await room_repo.get(room_id)
+    room_name = room.name if room else "unsorted"
+
+    # Set up progress queue for SSE
+    queue: asyncio.Queue = asyncio.Queue()
+    _progress_queues[session_id] = queue
+
+    async def progress_callback(status, progress, message, data):
+        await queue.put({
+            "status": status,
+            "progress": progress,
+            "message": message,
+            **data,
+        })
+
+    detected, room_mentions = await CaptureViewModel.process_rapid_capture(
+        session, session_id, snap_images, timestamps,
+        audio_data=audio_data, room_name=room_name,
+        progress_callback=progress_callback,
+    )
+
+    _progress_queues.pop(session_id, None)
+
+    return request.app.state.templates.TemplateResponse(
+        "capture/review.html",
+        {
+            "request": request,
+            "items": [obj.model_dump() for obj in detected],
+            "mode_switch": None,
+            "session_id": session_id,
+            "room_id": room_id,
+            "room_mentions": [m.model_dump() for m in room_mentions],
         },
     )
 

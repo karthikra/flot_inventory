@@ -26,6 +26,40 @@ class Settings(BaseSettings):
     whisper_compute_type: str = "int8"
     whisper_device: str = "auto"
     audio_dir: Path = Path("data/audio")
+    yolo_model_path: str = "models/yoloworld_v2s.onnx"
+    yolo_confidence_threshold: float = 0.3
+    yolo_nms_threshold: float = 0.45
+    detection_iou_threshold: float = 0.3
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_vision_model: str = "qwen2.5vl:3b"
+    qwen_timeout: float = 300.0
+    yolo_world_vocabulary: list[str] = [
+        # Furniture
+        "chair", "couch", "sofa", "table", "desk", "bed", "shelf", "bookshelf",
+        "cabinet", "dresser", "nightstand", "bench", "stool", "ottoman", "recliner",
+        "wardrobe", "tv stand", "coffee table", "dining table", "end table",
+        # Electronics
+        "tv", "monitor", "laptop", "keyboard", "mouse", "speaker", "headphones",
+        "remote", "phone", "tablet", "game console", "router", "camera",
+        # Kitchen
+        "refrigerator", "microwave", "oven", "toaster", "blender", "kettle",
+        "coffee maker", "dishwasher", "pot", "pan", "plate", "bowl", "cup", "mug",
+        "glass", "bottle", "cutting board", "knife block",
+        # Decor & lighting
+        "lamp", "floor lamp", "desk lamp", "chandelier", "candle", "vase",
+        "picture frame", "painting", "mirror", "clock", "plant", "potted plant",
+        "rug", "curtain", "pillow", "blanket", "figurine", "sculpture",
+        # Musical instruments
+        "piano", "guitar", "violin", "drum", "keyboard instrument",
+        # Books & media
+        "book", "bookshelf", "magazine", "vinyl record",
+        # Appliances
+        "washing machine", "dryer", "vacuum", "iron", "fan", "heater",
+        "air conditioner", "humidifier",
+        # Storage & misc
+        "box", "basket", "bag", "suitcase", "backpack", "shoe", "toy",
+        "teddy bear", "board game", "bicycle", "umbrella", "toolbox",
+    ]
 
     model_config = {
         "env_prefix": "INVENTORY_",
