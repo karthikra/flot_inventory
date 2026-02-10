@@ -39,7 +39,7 @@ MODEL_DIR = "/models"
     image=vllm_image,
     gpu=GPU,
     volumes={MODEL_DIR: model_volume},
-    container_idle_timeout=300,
+    scaledown_window=300,
     timeout=600,
 )
 def download_model():
@@ -58,7 +58,7 @@ def download_model():
     image=vllm_image,
     gpu=GPU,
     volumes={MODEL_DIR: model_volume},
-    container_idle_timeout=300,
+    scaledown_window=300,
     timeout=600,
     allow_concurrent_inputs=4,
 )
