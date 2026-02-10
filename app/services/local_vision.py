@@ -211,15 +211,41 @@ class LocalVisionService:
     async def _run_qwen(
         self, image_path: str, img_w: int, img_h: int, voice_context: str | None = None
     ) -> list[dict]:
-        """Run Qwen2.5-VL via Ollama for rich object descriptions with bounding boxes."""
-        image_b64 = base64.b64encode(Path(image_path).read_bytes()).decode("utf-8")
+        """Run Qwen2.5-VL via configured backend for rich object descriptions."""
+        if settings.vision_backend == "openai":
+            return await self._run_qwen_openai(image_path, img_w, img_h, voice_context)
+        return await self._run_qwen_ollama(image_path, img_w, img_h, voice_context)
 
+    def _build_prompt(self, voice_context: str | None = None) -> str:
         prompt = QWEN_PROMPT
         if voice_context:
             prompt = (
                 f'The person narrated: "{voice_context}"\n'
                 "Use this context to improve identification.\n\n" + prompt
             )
+        return prompt
+
+    def _normalize_bboxes(self, objects: list[dict], img_w: int, img_h: int) -> list[dict]:
+        """Normalize bbox_2d pixel coords to 0-1 range."""
+        for obj in objects:
+            bbox = obj.get("bbox_2d")
+            if bbox and len(bbox) == 4 and img_w > 0 and img_h > 0:
+                obj["bbox"] = [
+                    max(0.0, min(1.0, bbox[0] / img_w)),
+                    max(0.0, min(1.0, bbox[1] / img_h)),
+                    max(0.0, min(1.0, bbox[2] / img_w)),
+                    max(0.0, min(1.0, bbox[3] / img_h)),
+                ]
+            else:
+                obj["bbox"] = None
+        return objects
+
+    async def _run_qwen_ollama(
+        self, image_path: str, img_w: int, img_h: int, voice_context: str | None = None
+    ) -> list[dict]:
+        """Run Qwen2.5-VL via Ollama /api/generate endpoint."""
+        image_b64 = base64.b64encode(Path(image_path).read_bytes()).decode("utf-8")
+        prompt = self._build_prompt(voice_context)
 
         payload = {
             "model": settings.ollama_vision_model,
@@ -238,23 +264,61 @@ class LocalVisionService:
                 result = resp.json()
                 text = result.get("response", "")
                 objects = self._parse_qwen_response(text)
-
-                # Normalize bbox_2d pixel coords to 0-1 range
-                for obj in objects:
-                    bbox = obj.get("bbox_2d")
-                    if bbox and len(bbox) == 4 and img_w > 0 and img_h > 0:
-                        obj["bbox"] = [
-                            max(0.0, min(1.0, bbox[0] / img_w)),
-                            max(0.0, min(1.0, bbox[1] / img_h)),
-                            max(0.0, min(1.0, bbox[2] / img_w)),
-                            max(0.0, min(1.0, bbox[3] / img_h)),
-                        ]
-                    else:
-                        obj["bbox"] = None
-
-                return objects
+                return self._normalize_bboxes(objects, img_w, img_h)
         except Exception:
-            logger.exception("Qwen2.5-VL inference failed, using YOLO-only results")
+            logger.exception("Qwen2.5-VL (Ollama) inference failed, using YOLO-only results")
+            return []
+
+    async def _run_qwen_openai(
+        self, image_path: str, img_w: int, img_h: int, voice_context: str | None = None
+    ) -> list[dict]:
+        """Run Qwen2.5-VL via OpenAI-compatible /v1/chat/completions endpoint (Modal/vLLM)."""
+        image_b64 = base64.b64encode(Path(image_path).read_bytes()).decode("utf-8")
+        ext = Path(image_path).suffix.lstrip(".") or "jpeg"
+        mime = f"image/{ext}" if ext != "jpg" else "image/jpeg"
+        prompt = self._build_prompt(voice_context)
+
+        payload = {
+            "model": settings.openai_vision_model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime};base64,{image_b64}",
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        },
+                    ],
+                }
+            ],
+            "max_tokens": 4096,
+            "temperature": 0.1,
+        }
+
+        headers = {"Content-Type": "application/json"}
+        if settings.openai_vision_api_key:
+            headers["Authorization"] = f"Bearer {settings.openai_vision_api_key}"
+
+        try:
+            async with httpx.AsyncClient(timeout=settings.qwen_timeout) as client:
+                resp = await client.post(
+                    f"{settings.openai_vision_url}/chat/completions",
+                    json=payload,
+                    headers=headers,
+                )
+                resp.raise_for_status()
+                result = resp.json()
+                text = result["choices"][0]["message"]["content"]
+                objects = self._parse_qwen_response(text)
+                return self._normalize_bboxes(objects, img_w, img_h)
+        except Exception:
+            logger.exception("Qwen2.5-VL (OpenAI) inference failed, using YOLO-only results")
             return []
 
     def _parse_qwen_response(self, text: str) -> list[dict]:
