@@ -1,0 +1,126 @@
+/* Dashboard-specific styles */
+.dashboard-header {
+    margin-bottom: 24px;
+}
+
+.dashboard-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+}
+
+.dashboard-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    margin-top: 24px;
+}
+
+.section-header h2 {
+    margin-bottom: 0;
+    font-size: 1.1rem;
+}
+
+.section-header a {
+    font-size: 0.8rem;
+}
+
+.rooms-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.rooms-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.rooms-scroll .room-card {
+    min-width: 200px;
+    flex-shrink: 0;
+}
+
+.category-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.category-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.category-chip .count {
+    background: var(--accent-dim);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.recent-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+}
+
+.recent-item {
+    text-align: center;
+}
+
+.recent-item img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+}
+
+.recent-item .item-name {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quick-capture-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+    transition: var(--transition);
+    z-index: 500;
+}
+
+.quick-capture-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.5);
+}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Home Inventory{% endblock %}
+{% block nav_home %}active{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/dashboard.css">{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>Home Inventory</h1>
+    <p class="subtitle">Your complete household catalog</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ vm.total_items }}</div>
+        <div class="stat-label">Total Items</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">${{ "%.0f"|format(vm.total_value) }}</div>
+        <div class="stat-label">Est. Value</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ vm.total_rooms }}</div>
+        <div class="stat-label">Rooms</div>
+    </div>
+</div>
+
+<div class="section-header">
+    <h2>Rooms</h2>
+    <a href="/rooms">View All</a>
+</div>
+
+{% if vm.rooms %}
+<div class="rooms-scroll">
+    {% for r in vm.rooms %}
+    <a href="/rooms/{{ r.room.id }}" class="card room-card">
+        <div class="card-title">{{ r.room.name }}</div>
+        <div class="room-stats">
+            <span>{{ r.item_count }} items</span>
+            <span class="value-display">${{ "%.0f"|format(r.total_value) }}</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No rooms yet</p>
+    <a href="/rooms" class="btn btn-primary btn-sm">Add a Room</a>
+</div>
+{% endif %}
+
+{% if vm.by_category %}
+<div class="section-header">
+    <h2>Categories</h2>
+</div>
+<div class="category-list">
+    {% for cat, count in vm.by_category.items() %}
+    <a href="/items?category={{ cat }}" class="category-chip">
+        {{ cat | capitalize }}
+        <span class="count">{{ count }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if vm.recent_items %}
+<div class="section-header">
+    <h2>Recent Items</h2>
+    <a href="/items">View All</a>
+</div>
+<div class="recent-items-grid">
+    {% for item in vm.recent_items %}
+    <a href="/items/{{ item.id }}" class="recent-item">
+        {% if item.thumbnail_path %}
+        <img src="/static/images/{{ item.thumbnail_path | replace('data/images/', '') }}" alt="{{ item.name }}">
+        {% else %}
+        <div class="card-placeholder">?</div>
+        {% endif %}
+        <div class="item-name">{{ item.name }}</div>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if vm.needs_attention %}
+<div class="section-header">
+    <h2>Needs Attention</h2>
+</div>
+{% for item in vm.needs_attention %}
+<div class="card mb-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <div class="card-title">{{ item.name }}</div>
+            <div class="card-subtitle">Low confidence detection</div>
+        </div>
+        <a href="/items/{{ item.id }}" class="btn btn-sm btn-secondary">Review</a>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+{% endblock %}

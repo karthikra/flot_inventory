@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ vm.item.name }}{% endblock %}
+
+{% block content %}
+<a href="javascript:history.back()" class="text-muted" style="font-size:0.8rem">Back</a>
+
+<div class="mt-16">
+    {% if vm.item.image_path %}
+    <img src="/static/images/{{ vm.item.image_path | replace('data/images/', '') }}"
+         alt="{{ vm.item.name }}"
+         style="width:100%; max-height:300px; object-fit:cover; border-radius:var(--radius);">
+    {% endif %}
+
+    <h1 class="mt-16">{{ vm.item.name }}</h1>
+
+    <div class="flex gap-8 flex-wrap mb-16">
+        <span class="badge badge-category">{{ vm.item.category }}</span>
+        {% if vm.item.condition %}
+        <span class="badge badge-condition-{{ vm.item.condition }}">{{ vm.item.condition }}</span>
+        {% endif %}
+        {% if vm.item.status %}
+        <span class="badge badge-status-{{ vm.item.status }}">{{ vm.item.status }}</span>
+        {% endif %}
+        {% if vm.item.confidence_score %}
+        <div class="confidence-bar">
+            <div class="confidence-dots">
+                {% for i in range(5) %}
+                <div class="confidence-dot {% if vm.item.confidence_score > i * 0.2 %}filled{% endif %}"></div>
+                {% endfor %}
+            </div>
+            {{ "%.0f"|format(vm.item.confidence_score * 100) }}%
+        </div>
+        {% endif %}
+    </div>
+
+    {% if vm.item.description %}
+    <p class="text-muted mb-16">{{ vm.item.description }}</p>
+    {% endif %}
+
+    {% if room %}
+    <div class="card mb-16">
+        <div class="card-subtitle">Location</div>
+        <a href="/rooms/{{ room.id }}">{{ room.name }}</a> (Floor {{ room.floor }})
+    </div>
+    {% endif %}
+
+    {% if vm.item.estimated_value %}
+    <div class="card mb-16">
+        <div class="card-subtitle">Estimated Value</div>
+        <div class="value-display" style="font-size:1.3rem">${{ "%.2f"|format(vm.item.estimated_value) }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Book details -->
+    {% if vm.is_book %}
+    <div class="card mb-16">
+        <h3 class="mb-8">Book Details</h3>
+        {% if vm.item.title %}<div class="mb-8"><span class="text-muted">Title:</span> {{ vm.item.title }}</div>{% endif %}
+        {% if vm.item.author %}<div class="mb-8"><span class="text-muted">Author:</span> {{ vm.item.author }}</div>{% endif %}
+        {% if vm.item.isbn %}<div class="mb-8"><span class="text-muted">ISBN:</span> {{ vm.item.isbn }}</div>{% endif %}
+        {% if vm.item.publisher %}<div class="mb-8"><span class="text-muted">Publisher:</span> {{ vm.item.publisher }}</div>{% endif %}
+        {% if vm.item.genre %}<div class="mb-8"><span class="text-muted">Genre:</span> {{ vm.item.genre }}</div>{% endif %}
+        {% if vm.item.page_count %}<div class="mb-8"><span class="text-muted">Pages:</span> {{ vm.item.page_count }}</div>{% endif %}
+        {% if vm.item.year_published %}<div class="mb-8"><span class="text-muted">Published:</span> {{ vm.item.year_published }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Additional images -->
+    {% if vm.item.images %}
+    <div class="section-header">
+        <h3>Photos</h3>
+    </div>
+    <div class="card-grid mb-16">
+        {% for img in vm.item.images %}
+        <div class="card" style="padding:8px">
+            <img class="card-image" src="/static/images/{{ img.image_path | replace('data/images/', '') }}" alt="{{ img.image_type }}">
+            <div class="card-subtitle" style="text-align:center; margin-top:4px">{{ img.image_type }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Tags -->
+    {% if vm.item.tags %}
+    <div class="flex gap-8 flex-wrap mb-16">
+        {% for tag in vm.item.tags %}
+        <span class="tag">{{ tag.name }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Status actions -->
+    <div class="card mb-16">
+        <h3 class="mb-8">Declutter Status</h3>
+        <div class="flex gap-8 flex-wrap">
+            {% for s in ['keep', 'sell', 'donate', 'trash'] %}
+            <form method="POST" action="/items/{{ vm.item.id }}/edit" style="display:inline">
+                <input type="hidden" name="status" value="{{ s }}">
+                <button type="submit" class="btn btn-sm {% if vm.item.status == s %}btn-primary{% else %}btn-secondary{% endif %}">
+                    {{ s | capitalize }}
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Add photo -->
+    <div class="card mb-16">
+        <h3 class="mb-8">Add Photo</h3>
+        <form method="POST" action="/items/{{ vm.item.id }}/images" enctype="multipart/form-data">
+            <div class="form-group">
+                <select name="image_type" class="form-control">
+                    <option value="front">Front</option>
+                    <option value="back">Back</option>
+                    <option value="serial">Serial Number</option>
+                    <option value="damage">Damage</option>
+                    <option value="receipt">Receipt</option>
+                </select>
+            </div>
+            <input type="file" name="file" accept="image/*" capture="camera" class="form-control" required>
+            <button type="submit" class="btn btn-primary btn-sm mt-8">Upload</button>
+        </form>
+    </div>
+
+    <!-- Add tag -->
+    <div class="card mb-16">
+        <h3 class="mb-8">Add Tag</h3>
+        <form method="POST" action="/items/{{ vm.item.id }}/tags" class="flex gap-8">
+            <input type="text" name="tag" class="form-control" placeholder="Tag name" required>
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+        </form>
+    </div>
+
+    <!-- Delete -->
+    <button class="btn btn-danger btn-block"
+            hx-delete="/items/{{ vm.item.id }}"
+            hx-confirm="Delete this item permanently?">
+        Delete Item
+    </button>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ item.name }}{% endblock %}
+
+{% block content %}
+<a href="/items/{{ item.id }}" class="text-muted" style="font-size:0.8rem">Back</a>
+
+<h1 class="mt-16">Edit Item</h1>
+
+<form method="POST" action="/items/{{ item.id }}/edit">
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" value="{{ item.name }}" class="form-control" required>
+    </div>
+
+    <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" class="form-control">{{ item.description or '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+        <label for="category">Category</label>
+        <select id="category" name="category" class="form-control">
+            {% for cat in ['electronics', 'furniture', 'kitchenware', 'books', 'clothing', 'tools', 'decor', 'appliances', 'sports', 'toys', 'other'] %}
+            <option value="{{ cat }}" {% if item.category == cat %}selected{% endif %}>{{ cat | capitalize }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="estimated_value">Estimated Value ($)</label>
+        <input type="number" id="estimated_value" name="estimated_value"
+               value="{{ item.estimated_value or '' }}" class="form-control" step="0.01" min="0">
+    </div>
+
+    <div class="form-group">
+        <label for="condition">Condition</label>
+        <select id="condition" name="condition" class="form-control">
+            <option value="">-</option>
+            {% for c in ['new', 'good', 'fair', 'poor'] %}
+            <option value="{{ c }}" {% if item.condition == c %}selected{% endif %}>{{ c | capitalize }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="flex gap-8 mt-16">
+        <a href="/items/{{ item.id }}" class="btn btn-secondary" style="flex:1">Cancel</a>
+        <button type="submit" class="btn btn-primary" style="flex:1">Save</button>
+    </div>
+</form>
+{% endblock %}

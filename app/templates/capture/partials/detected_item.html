@@ -1,0 +1,7 @@
+<div class="review-item">
+    <div class="card-title">{{ item.name }}</div>
+    <div class="card-subtitle">{{ item.category }} | {{ "%.0f"|format(item.confidence * 100) }}% confidence</div>
+    {% if item.description %}
+    <p class="text-muted" style="font-size:0.8rem; margin-top:4px">{{ item.description[:100] }}</p>
+    {% endif %}
+</div>

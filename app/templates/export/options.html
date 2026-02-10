@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Export{% endblock %}
+{% block nav_export %}active{% endblock %}
+
+{% block content %}
+<h1>Export Inventory</h1>
+<p class="text-muted mb-16">Download your inventory data in various formats.</p>
+
+<div class="stats-grid mb-16">
+    <div class="stat-card">
+        <div class="stat-value">{{ vm.total_items }}</div>
+        <div class="stat-label">Items</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">${{ "%.0f"|format(vm.total_value) }}</div>
+        <div class="stat-label">Total Value</div>
+    </div>
+</div>
+
+<div class="card mb-16">
+    <h3 class="mb-8">CSV Spreadsheet</h3>
+    <p class="text-muted" style="font-size:0.85rem">All items in a spreadsheet format. Great for sorting and filtering.</p>
+    <a href="/export/csv" class="btn btn-primary btn-sm mt-8" download>Download CSV</a>
+</div>
+
+<div class="card mb-16">
+    <h3 class="mb-8">PDF Report</h3>
+    <p class="text-muted" style="font-size:0.85rem">Formatted report organized by room, with photos and descriptions.</p>
+    <div class="flex gap-8 mt-8">
+        <a href="/export/pdf" class="btn btn-primary btn-sm" download>Standard Report</a>
+        <a href="/export/pdf?insurance=true" class="btn btn-secondary btn-sm" download>Insurance Report</a>
+    </div>
+</div>
+
+<div class="card mb-16">
+    <h3 class="mb-8">JSON Backup</h3>
+    <p class="text-muted" style="font-size:0.85rem">Complete data backup in JSON format. Use for data portability.</p>
+    <a href="/export/json" class="btn btn-primary btn-sm mt-8" download>Download JSON</a>
+</div>
+
+{% if vm.rooms %}
+<div class="card">
+    <h3 class="mb-8">Export Specific Rooms</h3>
+    <form id="room-export-form">
+        {% for room in vm.rooms %}
+        <label class="flex items-center gap-8 mb-8" style="cursor:pointer">
+            <input type="checkbox" name="rooms" value="{{ room.id }}" checked>
+            <span>{{ room.name }}</span>
+        </label>
+        {% endfor %}
+        <div class="flex gap-8 mt-16">
+            <button type="button" class="btn btn-sm btn-secondary"
+                    onclick="exportRooms('csv')">CSV</button>
+            <button type="button" class="btn btn-sm btn-secondary"
+                    onclick="exportRooms('pdf')">PDF</button>
+            <button type="button" class="btn btn-sm btn-secondary"
+                    onclick="exportRooms('json')">JSON</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function exportRooms(format) {
+    const checked = document.querySelectorAll('#room-export-form input[name="rooms"]:checked');
+    const ids = Array.from(checked).map(c => c.value).join(',');
+    window.location.href = '/export/' + format + '?room_ids=' + ids;
+}
+</script>
+{% endif %}
+{% endblock %}

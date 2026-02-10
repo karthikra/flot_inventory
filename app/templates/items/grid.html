@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Items{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Items</h1>
+</div>
+
+<!-- Filters -->
+<div class="flex gap-8 mb-16 flex-wrap">
+    <select class="form-control" style="width:auto"
+            hx-get="/items" hx-target=".content" hx-push-url="true"
+            name="room_id">
+        <option value="">All Rooms</option>
+        {% for room in rooms %}
+        <option value="{{ room.id }}" {% if room_id == room.id %}selected{% endif %}>{{ room.name }}</option>
+        {% endfor %}
+    </select>
+    <select class="form-control" style="width:auto"
+            hx-get="/items" hx-target=".content" hx-push-url="true"
+            name="category">
+        <option value="">All Categories</option>
+        {% for cat in ['electronics', 'furniture', 'kitchenware', 'books', 'clothing', 'tools', 'decor', 'appliances', 'sports', 'toys', 'other'] %}
+        <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat | capitalize }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% if items %}
+<div class="card-grid">
+    {% for item in items %}
+    <a href="/items/{{ item.id }}" class="card">
+        {% if item.thumbnail_path %}
+        <img class="card-image" src="/static/images/{{ item.thumbnail_path | replace('data/images/', '') }}" alt="{{ item.name }}">
+        {% else %}
+        <div class="card-placeholder">?</div>
+        {% endif %}
+        <div class="card-title">{{ item.name }}</div>
+        <div class="card-subtitle">{{ item.category }}</div>
+        {% if item.estimated_value %}
+        <div class="value-display" style="font-size:0.8rem; margin-top:4px">${{ "%.0f"|format(item.estimated_value) }}</div>
+        {% endif %}
+        <div class="flex gap-8 mt-8 flex-wrap">
+            {% if item.condition %}
+            <span class="badge badge-condition-{{ item.condition }}">{{ item.condition }}</span>
+            {% endif %}
+            {% if item.status %}
+            <span class="badge badge-status-{{ item.status }}">{{ item.status }}</span>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No items found</p>
+    <a href="/capture" class="btn btn-primary">Capture Items</a>
+</div>
+{% endif %}
+{% endblock %}

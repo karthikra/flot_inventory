@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Floor Plan - {{ room.name }}{% endblock %}
+{% block nav_rooms %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="/rooms/{{ room.id }}" class="text-muted" style="font-size:0.8rem">{{ room.name }} /</a>
+        <h1>Floor Plan</h1>
+    </div>
+</div>
+
+<div class="card">
+    <p class="text-muted">Drag-and-drop floor plan coming soon.</p>
+</div>
+{% endblock %}

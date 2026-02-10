@@ -1,0 +1,131 @@
+{% if room_mentions %}
+<div class="room-mentions-card">
+    <h3>Room Mentions Detected</h3>
+    <p class="text-muted" style="margin-top:4px; font-size:0.85rem">Rooms mentioned in your narration:</p>
+    <div class="room-mention-tags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px">
+        {% for mention in room_mentions %}
+        <span class="room-mention-tag" title="{{ mention.raw_text }}">
+            {{ mention.room_name }} <span class="text-muted" style="font-size:0.75rem">({{ "%.0f"|format(mention.timestamp) }}s)</span>
+        </span>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if mode_switch %}
+<div class="mode-switch-card">
+    <h3>Switch to Image Mode</h3>
+    <p class="text-muted" style="margin-top:8px">{{ mode_switch.reason }}</p>
+    <ul>
+        {% for item in mode_switch.items %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+    <div class="flex gap-8 mt-16">
+        <button class="btn btn-primary btn-sm" onclick="switchToImageMode()">Switch to Image Mode</button>
+        <button class="btn btn-secondary btn-sm" onclick="this.closest('.mode-switch-card').remove()">Skip</button>
+    </div>
+</div>
+{% endif %}
+
+<h2 class="mb-16">Review Detected Items ({{ items | length }})</h2>
+
+<form method="POST" action="/capture/confirm" id="confirm-form">
+    <input type="hidden" name="session_id" value="{{ session_id }}">
+    <input type="hidden" name="room_id" value="{{ room_id }}">
+
+    <div class="review-grid">
+        {% for item in items %}
+        <div class="review-item" id="review-item-{{ loop.index0 }}">
+            <button type="button" class="remove-btn" onclick="this.closest('.review-item').remove()">&times;</button>
+
+            <input type="hidden" name="items[{{ loop.index0 }}][frame_path]" value="{{ item.get('frame_path', source_image or '') }}">
+
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="items[{{ loop.index0 }}][name]" value="{{ item.name }}" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="items[{{ loop.index0 }}][description]" class="form-control" rows="2">{{ item.description }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Category</label>
+                <select name="items[{{ loop.index0 }}][category]" class="form-control">
+                    {% for cat in ['electronics', 'furniture', 'kitchenware', 'books', 'clothing', 'tools', 'decor', 'appliances', 'sports', 'toys', 'other'] %}
+                    <option value="{{ cat }}" {% if item.category == cat %}selected{% endif %}>{{ cat | capitalize }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex gap-8">
+                <div class="form-group" style="flex:1">
+                    <label>Condition</label>
+                    <select name="items[{{ loop.index0 }}][condition]" class="form-control">
+                        <option value="">-</option>
+                        {% for c in ['new', 'good', 'fair', 'poor'] %}
+                        <option value="{{ c }}" {% if item.condition == c %}selected{% endif %}>{{ c | capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>Est. Value ($)</label>
+                    <input type="number" name="items[{{ loop.index0 }}][estimated_value]"
+                           value="{{ item.estimated_value_usd or '' }}" class="form-control" step="0.01" min="0">
+                </div>
+            </div>
+
+            <input type="hidden" name="items[{{ loop.index0 }}][confidence_score]" value="{{ item.confidence }}">
+            <input type="hidden" name="items[{{ loop.index0 }}][is_book]" value="{{ 'true' if item.is_book else 'false' }}">
+            <input type="hidden" name="items[{{ loop.index0 }}][voice_context]" value="{{ item.voice_context or '' }}">
+
+            {% if item.is_book %}
+            <div class="card mt-8" style="background: var(--bg-secondary)">
+                <div class="card-subtitle mb-8">Book Details</div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" name="items[{{ loop.index0 }}][title]" value="{{ item.get('book_details', {}).get('title', item.name) if item.is_book else '' }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Author</label>
+                    <input type="text" name="items[{{ loop.index0 }}][author]" value="{{ item.get('book_details', {}).get('author', '') if item.is_book else '' }}" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>ISBN</label>
+                    <input type="text" name="items[{{ loop.index0 }}][isbn]" class="form-control" placeholder="Scan or enter manually">
+                </div>
+            </div>
+            {% endif %}
+
+            {% if item.needs_closer_look %}
+            <div class="alert-message mt-8" style="font-size:0.8rem">
+                {{ item.closer_look_reason }}
+            </div>
+            {% endif %}
+
+            {% if item.voice_context %}
+            <div class="voice-context-snippet mt-8">
+                <span class="voice-icon" title="From your narration">&#127908;</span>
+                <span class="voice-text">{{ item.voice_context }}</span>
+            </div>
+            {% endif %}
+
+            <div class="confidence-bar mt-8">
+                Confidence:
+                <div class="confidence-dots">
+                    {% for i in range(5) %}
+                    <div class="confidence-dot {% if item.confidence > i * 0.2 %}filled{% endif %}"></div>
+                    {% endfor %}
+                </div>
+                {{ "%.0f"|format(item.confidence * 100) }}%
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="flex gap-8 mt-16">
+        <button type="submit" class="btn btn-primary btn-block">Save {{ items | length }} Items</button>
+    </div>
+</form>

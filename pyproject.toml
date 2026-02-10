@@ -1,0 +1,34 @@
+[project]
+name = "flot-inventory"
+version = "0.1.0"
+description = "Home inventory application with video walkthrough and VLM-powered object identification"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "anthropic>=0.79.0",
+    "fastapi>=0.128.6",
+    "ffmpeg-python>=0.2.0",
+    "fpdf2>=2.8.5",
+    "httpx>=0.28.1",
+    "imagehash>=4.3.2",
+    "jinja2>=3.1.6",
+    "opencv-python-headless>=4.13.0.92",
+    "pillow>=12.1.0",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0",
+    "python-multipart>=0.0.22",
+    "pyzbar>=0.1.9",
+    "rapidfuzz>=3.14.3",
+    "sqlalchemy[asyncio]>=2.0.46",
+    "sse-starlette>=3.2.0",
+    "uvicorn[standard]>=0.40.0",
+    "faster-whisper>=1.2.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

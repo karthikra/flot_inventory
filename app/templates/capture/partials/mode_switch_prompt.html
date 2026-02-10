@@ -1,0 +1,13 @@
+<div class="mode-switch-card">
+    <h3>Switch to Image Mode</h3>
+    <p class="text-muted" style="margin-top:8px">{{ prompt.reason }}</p>
+    <ul>
+        {% for item in prompt.items %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+    <div class="flex gap-8 mt-16">
+        <button class="btn btn-primary btn-sm" onclick="switchToImageMode()">Switch to Image Mode</button>
+        <button class="btn btn-secondary btn-sm" onclick="this.closest('.mode-switch-card').remove()">Skip</button>
+    </div>
+</div>

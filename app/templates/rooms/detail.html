@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ vm.room.name }}{% endblock %}
+{% block nav_rooms %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <a href="/rooms" class="text-muted" style="font-size:0.8rem">Rooms /</a>
+        <h1>{{ vm.room.name }}</h1>
+    </div>
+    <div class="flex gap-8">
+        <a href="/capture?room_id={{ vm.room.id }}" class="btn btn-primary btn-sm">Capture</a>
+        <button class="btn btn-danger btn-sm"
+                hx-delete="/rooms/{{ vm.room.id }}"
+                hx-confirm="Delete this room and all its items?">Delete</button>
+    </div>
+</div>
+
+{% if vm.room.description %}
+<p class="text-muted mb-16">{{ vm.room.description }}</p>
+{% endif %}
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ vm.item_count }}</div>
+        <div class="stat-label">Items</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">${{ "%.0f"|format(vm.total_value) }}</div>
+        <div class="stat-label">Est. Value</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ vm.room.floor }}</div>
+        <div class="stat-label">Floor</div>
+    </div>
+</div>
+
+{% if vm.items %}
+<div class="section-header">
+    <h2>Items</h2>
+</div>
+<div class="card-grid">
+    {% for item in vm.items %}
+    <a href="/items/{{ item.id }}" class="card">
+        {% if item.thumbnail_path %}
+        <img class="card-image" src="/static/images/{{ item.thumbnail_path | replace('data/images/', '') }}" alt="{{ item.name }}">
+        {% else %}
+        <div class="card-placeholder">?</div>
+        {% endif %}
+        <div class="card-title">{{ item.name }}</div>
+        <div class="flex items-center justify-between mt-8">
+            <span class="badge badge-category">{{ item.category }}</span>
+            {% if item.estimated_value %}
+            <span class="value-display" style="font-size:0.8rem">${{ "%.0f"|format(item.estimated_value) }}</span>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <p>No items in this room yet.</p>
+    <a href="/capture?room_id={{ vm.room.id }}" class="btn btn-primary">Start Capturing</a>
+</div>
+{% endif %}
+{% endblock %}
