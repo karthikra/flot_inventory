@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     detection_iou_threshold: float = 0.3
     vision_backend: str = "ollama"  # "ollama" or "openai"
     ollama_base_url: str = "http://euler.tail375484.ts.net:11434"
-    ollama_vision_model: str = "qwen2.5vl:7b"
+    ollama_vision_model: str = "qwen3-vl:8b"
     openai_vision_url: str = ""  # e.g. "https://user--qwen25vl.modal.run/v1"
     openai_vision_api_key: str = ""
     openai_vision_model: str = "Qwen/Qwen2.5-VL-7B-Instruct"

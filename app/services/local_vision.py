@@ -13,7 +13,8 @@ from app.schemas.capture import DetectedObject
 logger = logging.getLogger(__name__)
 
 # Prompt for Qwen2.5-VL requesting structured JSON with bounding boxes
-QWEN_PROMPT = """Identify every distinct object visible in this image.
+QWEN_PROMPT = """/nothink
+Identify every distinct object visible in this image.
 For each object, return a JSON object with these fields:
 - "name": specific descriptive name (include brand/model/color if visible)
 - "description": 1-2 sentences about color, material, size, condition
