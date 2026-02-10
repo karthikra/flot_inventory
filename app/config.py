@@ -1,10 +1,14 @@
 from pathlib import Path
 
+from dotenv import dotenv_values
 from pydantic_settings import BaseSettings
+
+_ENV_FILE = Path.home() / "env" / ".env.dev"
+_env_vars = dotenv_values(str(_ENV_FILE)) if _ENV_FILE.exists() else {}
 
 
 class Settings(BaseSettings):
-    app_name: str = "Home Inventory"
+    app_name: str = "Flot Inventory"
     debug: bool = False
     database_url: str = "sqlite+aiosqlite:///data/inventory.db"
     data_dir: Path = Path("data")
@@ -23,7 +27,15 @@ class Settings(BaseSettings):
     whisper_device: str = "auto"
     audio_dir: Path = Path("data/audio")
 
-    model_config = {"env_prefix": "INVENTORY_", "env_file": ".env"}
+    model_config = {
+        "env_prefix": "INVENTORY_",
+        "env_file": ".env",
+        "extra": "ignore",
+    }
+
+    def model_post_init(self, __context):
+        if not self.anthropic_api_key:
+            self.anthropic_api_key = _env_vars.get("ANTHROPIC_API_KEY", "")
 
 
 settings = Settings()
