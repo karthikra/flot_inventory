@@ -2,15 +2,17 @@
 
 Usage:
     uv pip install ultralytics
-    python models/export_yoloworld.py
+    python scripts/export_yoloworld.py
 
-Produces models/yoloworld_v2s.onnx (~49MB).
+Produces ~/.cache/flot_inventory/models/yoloworld_v2s.onnx (~49MB).
 Requires pkg_resources monkey-patch for Python 3.13+ (CLIP compatibility).
 """
 
 import importlib
+import shutil
 import sys
 import types
+from pathlib import Path
 
 # --- Monkey-patch pkg_resources for Python 3.13+ / setuptools 82+ ---
 # CLIP does `from pkg_resources import packaging` which no longer exists.
@@ -24,6 +26,8 @@ except (ModuleNotFoundError, ImportError):
     mod.__path__ = []
     mod.packaging = packaging
     sys.modules["pkg_resources"] = mod
+
+CACHE_DIR = Path.home() / ".cache" / "flot_inventory" / "models"
 
 # Household vocabulary - baked into the ONNX at export time
 HOUSEHOLD_VOCABULARY = [
@@ -58,7 +62,10 @@ HOUSEHOLD_VOCABULARY = [
 def export():
     from ultralytics import YOLO
 
-    print(f"Loading yolov8s-worldv2.pt ...")
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    dest = CACHE_DIR / "yoloworld_v2s.onnx"
+
+    print("Loading yolov8s-worldv2.pt ...")
     model = YOLO("yolov8s-worldv2.pt")
 
     # Deduplicate vocabulary while preserving order
@@ -75,7 +82,13 @@ def export():
 
     print("Exporting to ONNX ...")
     out_path = model.export(format="onnx", imgsz=640, simplify=True)
-    print(f"Done: {out_path}")
+
+    # ultralytics saves next to the .pt file; move to cache dir
+    out_path = Path(out_path)
+    if out_path != dest:
+        shutil.move(str(out_path), str(dest))
+
+    print(f"Saved: {dest}")
     print(f"Vocabulary ({len(vocab)} classes):")
     for i, name in enumerate(vocab):
         print(f"  [{i:3d}] {name}")

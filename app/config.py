@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     whisper_compute_type: str = "int8"
     whisper_device: str = "auto"
     audio_dir: Path = Path("data/audio")
-    yolo_model_path: str = "models/yoloworld_v2s.onnx"
+    models_cache_dir: Path = Path.home() / ".cache" / "flot_inventory" / "models"
+    yolo_model_path: str = str(Path.home() / ".cache" / "flot_inventory" / "models" / "yoloworld_v2s.onnx")
     yolo_confidence_threshold: float = 0.3
     yolo_nms_threshold: float = 0.45
     detection_iou_threshold: float = 0.3

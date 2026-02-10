@@ -16,10 +16,6 @@ data/
 # Environment
 .env
 
-# Model weights
-*.onnx
-*.pt
-
 # OS
 .DS_Store
 
