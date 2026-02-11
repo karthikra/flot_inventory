@@ -15,9 +15,9 @@
 {% if mode_switch %}
 <div class="mode-switch-card">
     <h3>Switch to Image Mode</h3>
-    <p class="text-muted" style="margin-top:8px">{{ mode_switch.reason }}</p>
+    <p class="text-muted" style="margin-top:8px">{{ mode_switch['reason'] }}</p>
     <ul>
-        {% for item in mode_switch.items %}
+        {% for item in mode_switch['items'] %}
         <li>{{ item }}</li>
         {% endfor %}
     </ul>
