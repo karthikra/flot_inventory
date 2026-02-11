@@ -53,5 +53,27 @@ class ImageService:
             img.thumbnail(settings.thumbnail_size)
             img.save(dest, quality=85)
 
+    def crop_to_bbox(
+        self, image_path: str, bbox: list[float], output_path: str | None = None
+    ) -> str:
+        """Crop an image to a normalized [x1,y1,x2,y2] bounding box. Returns path to cropped image."""
+        import uuid as _uuid
+
+        with Image.open(image_path) as img:
+            w, h = img.size
+            left = int(bbox[0] * w)
+            top = int(bbox[1] * h)
+            right = int(bbox[2] * w)
+            bottom = int(bbox[3] * h)
+            cropped = img.crop((left, top, right, bottom))
+
+            if not output_path:
+                crop_dir = settings.data_dir / "crops"
+                crop_dir.mkdir(parents=True, exist_ok=True)
+                output_path = str(crop_dir / f"{_uuid.uuid4().hex}.jpg")
+
+            cropped.save(output_path, quality=90)
+            return output_path
+
     def _sanitize(self, name: str) -> str:
         return "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in name.lower())

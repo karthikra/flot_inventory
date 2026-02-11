@@ -7,6 +7,7 @@ from app.models.item import Item
 from app.repositories.book_repo import BookRepository
 from app.repositories.item_repo import ItemRepository
 from app.schemas.item import ItemCreate, ItemUpdate
+from app.services.value_estimator import calculate_depreciation
 
 
 @dataclass
@@ -14,6 +15,7 @@ class ItemDetailViewModel:
     item: Item | None = None
     is_book: bool = False
     duplicate_warnings: list[dict] = field(default_factory=list)
+    depreciation: dict | None = None
 
     @classmethod
     async def load(cls, session: AsyncSession, item_id: int) -> "ItemDetailViewModel":
@@ -21,7 +23,14 @@ class ItemDetailViewModel:
         item = await repo.get_with_relations(item_id)
         if not item:
             return cls()
-        return cls(item=item, is_book=isinstance(item, Book))
+
+        dep = None
+        if item.replacement_cost and item.purchase_date:
+            dep = calculate_depreciation(
+                item.replacement_cost, item.purchase_date, item.category or "other"
+            )
+
+        return cls(item=item, is_book=isinstance(item, Book), depreciation=dep)
 
     @classmethod
     async def create_item(cls, session: AsyncSession, data: ItemCreate) -> Item:

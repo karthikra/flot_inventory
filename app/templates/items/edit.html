@@ -42,6 +42,68 @@
         </select>
     </div>
 
+    <h3 class="mt-16 mb-8">Product Details</h3>
+
+    <div class="flex gap-8">
+        <div class="form-group" style="flex:1">
+            <label for="brand">Brand</label>
+            <input type="text" id="brand" name="brand" value="{{ item.brand or '' }}" class="form-control">
+        </div>
+        <div class="form-group" style="flex:1">
+            <label for="model_number">Model</label>
+            <input type="text" id="model_number" name="model_number" value="{{ item.model_number or '' }}" class="form-control">
+        </div>
+    </div>
+
+    <div class="flex gap-8">
+        <div class="form-group" style="flex:1">
+            <label for="serial_number">Serial Number</label>
+            <input type="text" id="serial_number" name="serial_number" value="{{ item.serial_number or '' }}" class="form-control">
+        </div>
+        <div class="form-group" style="flex:1">
+            <label for="material">Material</label>
+            <input type="text" id="material" name="material" value="{{ item.material or '' }}" class="form-control">
+        </div>
+    </div>
+
+    <div class="flex gap-8">
+        <div class="form-group" style="flex:1">
+            <label>Width (cm)</label>
+            <input type="number" name="width_cm" value="{{ item.width_cm or '' }}" class="form-control" step="0.1" min="0">
+        </div>
+        <div class="form-group" style="flex:1">
+            <label>Height (cm)</label>
+            <input type="number" name="height_cm" value="{{ item.height_cm or '' }}" class="form-control" step="0.1" min="0">
+        </div>
+        <div class="form-group" style="flex:1">
+            <label>Depth (cm)</label>
+            <input type="number" name="depth_cm" value="{{ item.depth_cm or '' }}" class="form-control" step="0.1" min="0">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="weight_kg">Weight (kg)</label>
+        <input type="number" id="weight_kg" name="weight_kg" value="{{ item.weight_kg or '' }}" class="form-control" step="0.1" min="0">
+    </div>
+
+    <h3 class="mt-16 mb-8">Insurance / Purchase Info</h3>
+
+    <div class="flex gap-8">
+        <div class="form-group" style="flex:1">
+            <label for="replacement_cost">Replacement Cost ($)</label>
+            <input type="number" id="replacement_cost" name="replacement_cost" value="{{ item.replacement_cost or '' }}" class="form-control" step="0.01" min="0">
+        </div>
+        <div class="form-group" style="flex:1">
+            <label for="purchase_price">Purchase Price ($)</label>
+            <input type="number" id="purchase_price" name="purchase_price" value="{{ item.purchase_price or '' }}" class="form-control" step="0.01" min="0">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="purchase_date">Purchase Date</label>
+        <input type="date" id="purchase_date" name="purchase_date" value="{{ item.purchase_date or '' }}" class="form-control">
+    </div>
+
     <div class="flex gap-8 mt-16">
         <a href="/items/{{ item.id }}" class="btn btn-secondary" style="flex:1">Cancel</a>
         <button type="submit" class="btn btn-primary" style="flex:1">Save</button>

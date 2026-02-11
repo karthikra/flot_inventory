@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.schemas.item import ItemCreate, ItemUpdate
 from app.services.image_service import ImageService
+from app.services.product_search import ProductSearchService
 from app.viewmodels.item_vm import ItemDetailViewModel
 
 router = APIRouter(prefix="/items")
@@ -29,6 +30,21 @@ async def list_items(
     return request.app.state.templates.TemplateResponse(
         "items/grid.html",
         {"request": request, "items": items, "rooms": rooms, "room_id": room_id, "category": category},
+    )
+
+
+@router.get("/enrich")
+async def enrich_search(request: Request, name: str = "", brand: str = "", category: str = ""):
+    """Search for product info to enrich an item. Returns HTMX partial."""
+    search_svc = ProductSearchService()
+    results = await search_svc.search_product(name, category=category, brand=brand)
+
+    # If called from item detail page, get item_id from referer
+    item_id = request.query_params.get("item_id")
+
+    return request.app.state.templates.TemplateResponse(
+        "items/enrich_results.html",
+        {"request": request, "results": results, "item_id": item_id},
     )
 
 
@@ -88,6 +104,41 @@ async def add_image(
     image_path, _ = await img_service.save_upload(data, ext=ext)
 
     await ItemDetailViewModel.add_image(session, item_id, image_path, image_type)
+    return RedirectResponse(f"/items/{item_id}", status_code=303)
+
+
+@router.get("/{item_id}/visual-search")
+async def visual_search(item_id: int, request: Request, session: AsyncSession = Depends(get_session)):
+    """Visual search using item's primary image via SerpAPI Google Lens."""
+    vm = await ItemDetailViewModel.load(session, item_id)
+    if not vm.item or not vm.item.image_path:
+        return HTMLResponse("<div class='text-muted' style='font-size:0.85rem'>No image available for visual search.</div>")
+
+    search_svc = ProductSearchService()
+    results = await search_svc.visual_search(vm.item.image_path)
+
+    return request.app.state.templates.TemplateResponse(
+        "items/enrich_results.html",
+        {"request": request, "results": results, "item_id": item_id},
+    )
+
+
+@router.post("/{item_id}/enrich")
+async def apply_enrichment(item_id: int, request: Request, session: AsyncSession = Depends(get_session)):
+    """Apply selected product search result to an item."""
+    form = await request.form()
+    updates = {}
+    if v := form.get("price"):
+        updates["replacement_cost"] = float(v)
+    if v := form.get("brand"):
+        updates["brand"] = v
+    if v := form.get("model_number"):
+        updates["model_number"] = v
+
+    if updates:
+        data = ItemUpdate(**updates)
+        await ItemDetailViewModel.update_item(session, item_id, data)
+
     return RedirectResponse(f"/items/{item_id}", status_code=303)
 
 

@@ -44,10 +44,56 @@
     </div>
     {% endif %}
 
-    {% if vm.item.estimated_value %}
+    {% if vm.item.estimated_value or vm.item.replacement_cost %}
     <div class="card mb-16">
-        <div class="card-subtitle">Estimated Value</div>
-        <div class="value-display" style="font-size:1.3rem">${{ "%.2f"|format(vm.item.estimated_value) }}</div>
+        <div class="card-subtitle">Value</div>
+        {% if vm.item.replacement_cost %}
+        <div class="value-display" style="font-size:1.3rem">${{ "%.2f"|format(vm.item.replacement_cost) }}
+            <span class="text-muted" style="font-size:0.75rem">replacement</span>
+        </div>
+        {% endif %}
+        {% if vm.item.estimated_value %}
+        <div {% if vm.item.replacement_cost %}style="font-size:0.9rem; color:var(--text-muted)"{% else %}class="value-display" style="font-size:1.3rem"{% endif %}>
+            ${{ "%.2f"|format(vm.item.estimated_value) }}
+            <span class="text-muted" style="font-size:0.75rem">AI estimate</span>
+        </div>
+        {% endif %}
+        {% if vm.item.purchase_price %}
+        <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px">
+            Paid ${{ "%.2f"|format(vm.item.purchase_price) }}{% if vm.item.purchase_date %} on {{ vm.item.purchase_date }}{% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Depreciation -->
+    {% if vm.depreciation %}
+    <div class="card mb-16">
+        <div class="card-subtitle">Depreciation (Actual Cash Value)</div>
+        <div class="value-display" style="font-size:1.2rem">${{ "%.2f"|format(vm.depreciation.actual_cash_value) }}</div>
+        <div class="text-muted" style="font-size:0.8rem; margin-top:4px">
+            {{ "%.0f"|format(vm.depreciation.depreciation_rate * 100) }}%/yr &middot;
+            {{ vm.depreciation.age_years }} yrs old &middot;
+            ${{ "%.2f"|format(vm.depreciation.total_depreciation) }} depreciated
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Product details -->
+    {% if vm.item.brand or vm.item.model_number or vm.item.material or vm.item.width_cm %}
+    <div class="card mb-16">
+        <h3 class="mb-8">Product Details</h3>
+        {% if vm.item.brand %}<div class="mb-4"><span class="text-muted">Brand:</span> {{ vm.item.brand }}</div>{% endif %}
+        {% if vm.item.model_number %}<div class="mb-4"><span class="text-muted">Model:</span> {{ vm.item.model_number }}</div>{% endif %}
+        {% if vm.item.serial_number %}<div class="mb-4"><span class="text-muted">Serial:</span> {{ vm.item.serial_number }}</div>{% endif %}
+        {% if vm.item.material %}<div class="mb-4"><span class="text-muted">Material:</span> {{ vm.item.material }}</div>{% endif %}
+        {% if vm.item.width_cm or vm.item.height_cm or vm.item.depth_cm %}
+        <div class="mb-4">
+            <span class="text-muted">Dimensions:</span>
+            {{ "%.1f"|format(vm.item.width_cm or 0) }} x {{ "%.1f"|format(vm.item.height_cm or 0) }} x {{ "%.1f"|format(vm.item.depth_cm or 0) }} cm
+        </div>
+        {% endif %}
+        {% if vm.item.weight_kg %}<div class="mb-4"><span class="text-muted">Weight:</span> {{ "%.1f"|format(vm.item.weight_kg) }} kg</div>{% endif %}
     </div>
     {% endif %}
 
@@ -88,6 +134,30 @@
         {% endfor %}
     </div>
     {% endif %}
+
+    <!-- Product enrichment -->
+    <div class="card mb-16">
+        <h3 class="mb-8">Look Up Product</h3>
+        <p class="text-muted" style="font-size:0.8rem; margin-bottom:8px">Search retailers for pricing, specs, and dimensions.</p>
+        <div class="flex gap-8">
+            <button class="btn btn-primary btn-sm"
+                    hx-get="/items/enrich?name={{ vm.item.name | urlencode }}&brand={{ (vm.item.brand or '') | urlencode }}&category={{ vm.item.category | urlencode }}&item_id={{ vm.item.id }}"
+                    hx-target="#enrich-results-{{ vm.item.id }}"
+                    hx-indicator="#enrich-spinner-{{ vm.item.id }}">
+                Look Up
+            </button>
+            {% if vm.item.image_path %}
+            <button class="btn btn-secondary btn-sm"
+                    hx-get="/items/{{ vm.item.id }}/visual-search"
+                    hx-target="#enrich-results-{{ vm.item.id }}"
+                    hx-indicator="#enrich-spinner-{{ vm.item.id }}">
+                Visual Search
+            </button>
+            {% endif %}
+        </div>
+        <span id="enrich-spinner-{{ vm.item.id }}" class="htmx-indicator text-muted" style="font-size:0.8rem">Searching...</span>
+        <div id="enrich-results-{{ vm.item.id }}" class="mt-8"></div>
+    </div>
 
     <!-- Status actions -->
     <div class="card mb-16">

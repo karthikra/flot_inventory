@@ -13,6 +13,11 @@ class DetectedObject(BaseModel):
     condition: str | None = None
     bounding_box: list[float] | None = None  # [x1, y1, x2, y2] normalized
     voice_context: str | None = None
+    # Product enrichment from vision
+    brand: str | None = None
+    model_number: str | None = None
+    material: str | None = None
+    estimated_dimensions_cm: dict | None = None  # {width, height, depth}
 
 
 class BookDetail(BaseModel):
@@ -71,6 +76,17 @@ class CaptureConfirmItem(BaseModel):
     isbn: str | None = None
     publisher: str | None = None
     genre: str | None = None
+    # Product enrichment
+    brand: str | None = None
+    model_number: str | None = None
+    material: str | None = None
+    width_cm: float | None = None
+    height_cm: float | None = None
+    depth_cm: float | None = None
+    weight_kg: float | None = None
+    replacement_cost: float | None = None
+    purchase_date: str | None = None
+    purchase_price: float | None = None
 
 
 class CaptureConfirmRequest(BaseModel):

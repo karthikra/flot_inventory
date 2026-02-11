@@ -1,0 +1,31 @@
+{% if results %}
+<div class="enrich-results">
+    {% for r in results %}
+    <div class="card mb-8 enrich-result-card" style="padding:8px; cursor:pointer"
+         {% if item_id %}
+         hx-post="/items/{{ item_id }}/enrich"
+         hx-vals='{"title": "{{ r.title | replace("\"", "&quot;") }}", "price": "{{ r.price or "" }}", "brand": "{{ r.brand or "" }}", "model_number": "{{ r.model_number or "" }}", "source": "{{ r.source or "" }}"}'
+         hx-target="body"
+         hx-swap="none"
+         hx-on::after-request="window.location.reload()"
+         {% endif %}
+         >
+        <div class="flex gap-8" style="align-items:center">
+            {% if r.thumbnail_url %}
+            <img src="{{ r.thumbnail_url }}" alt="" style="width:48px; height:48px; object-fit:cover; border-radius:4px; flex-shrink:0">
+            {% endif %}
+            <div style="flex:1; min-width:0">
+                <div style="font-weight:600; font-size:0.85rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ r.title }}</div>
+                <div class="flex gap-8" style="font-size:0.8rem; color:var(--text-muted); margin-top:2px">
+                    {% if r.price %}<span style="color:var(--success); font-weight:600">${{ "%.2f"|format(r.price) }}</span>{% endif %}
+                    {% if r.source %}<span>{{ r.source }}</span>{% endif %}
+                    {% if r.brand %}<span>{{ r.brand }}</span>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-muted" style="font-size:0.85rem; padding:8px">No results found. Try editing the name or adding a brand.</div>
+{% endif %}

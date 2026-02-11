@@ -17,8 +17,10 @@ class ExportService:
         writer = csv.writer(output)
         writer.writerow([
             "ID", "Name", "Description", "Category", "Room", "Condition",
-            "Status", "Estimated Value", "Type", "Book Title", "Book Author",
-            "ISBN", "Created At",
+            "Status", "Estimated Value", "Replacement Cost", "Brand", "Model",
+            "Serial Number", "Material", "Width (cm)", "Height (cm)", "Depth (cm)",
+            "Weight (kg)", "Purchase Date", "Purchase Price",
+            "Type", "Book Title", "Book Author", "ISBN", "Created At",
         ])
         for item in items:
             room_name = rooms.get(item.room_id, "Unknown")
@@ -28,7 +30,13 @@ class ExportService:
             writer.writerow([
                 item.id, item.name, item.description or "", item.category,
                 room_name, item.condition or "", item.status or "",
-                item.estimated_value or "", item.type, title, author, isbn,
+                item.estimated_value or "", item.replacement_cost or "",
+                item.brand or "", item.model_number or "",
+                item.serial_number or "", item.material or "",
+                item.width_cm or "", item.height_cm or "", item.depth_cm or "",
+                item.weight_kg or "", item.purchase_date or "",
+                item.purchase_price or "",
+                item.type, title, author, isbn,
                 item.created_at.isoformat() if item.created_at else "",
             ])
         return output.getvalue()
@@ -46,6 +54,19 @@ class ExportService:
                 "condition": item.condition,
                 "status": item.status,
                 "estimated_value": item.estimated_value,
+                "replacement_cost": item.replacement_cost,
+                "brand": item.brand,
+                "model_number": item.model_number,
+                "serial_number": item.serial_number,
+                "material": item.material,
+                "dimensions_cm": {
+                    "width": item.width_cm,
+                    "height": item.height_cm,
+                    "depth": item.depth_cm,
+                } if any([item.width_cm, item.height_cm, item.depth_cm]) else None,
+                "weight_kg": item.weight_kg,
+                "purchase_date": item.purchase_date,
+                "purchase_price": item.purchase_price,
                 "type": item.type,
                 "image_path": item.image_path,
                 "created_at": item.created_at.isoformat() if item.created_at else None,
@@ -83,9 +104,9 @@ class ExportService:
         pdf.ln(5)
 
         if insurance_mode:
-            total_value = sum(item.estimated_value or 0 for item in items)
+            total_value = sum(item.replacement_cost or item.estimated_value or 0 for item in items)
             pdf.set_font("Helvetica", "B", 14)
-            pdf.cell(0, 10, f"Total Estimated Value: ${total_value:,.2f}", new_x="LMARGIN", new_y="NEXT", align="C")
+            pdf.cell(0, 10, f"Total Inventory Value: ${total_value:,.2f}", new_x="LMARGIN", new_y="NEXT", align="C")
             pdf.ln(5)
 
         # group by room
@@ -96,7 +117,7 @@ class ExportService:
 
         for room_name, room_items in sorted(by_room.items()):
             pdf.set_font("Helvetica", "B", 14)
-            room_value = sum(i.estimated_value or 0 for i in room_items)
+            room_value = sum(i.replacement_cost or i.estimated_value or 0 for i in room_items)
             pdf.cell(0, 10, f"{room_name} ({len(room_items)} items — ${room_value:,.2f})", new_x="LMARGIN", new_y="NEXT")
             pdf.line(10, pdf.get_y(), 200, pdf.get_y())
             pdf.ln(3)
@@ -129,8 +150,11 @@ class ExportService:
             details.append(f"Category: {item.category}")
         if item.condition:
             details.append(f"Condition: {item.condition}")
-        if insurance_mode and item.estimated_value:
-            details.append(f"Value: ${item.estimated_value:,.2f}")
+        if insurance_mode:
+            value = item.replacement_cost or item.estimated_value
+            if value:
+                label = "Replacement" if item.replacement_cost else "Est. Value"
+                details.append(f"{label}: ${value:,.2f}")
         if isinstance(item, Book):
             if item.title:
                 details.append(f"Title: {item.title}")
@@ -140,5 +164,27 @@ class ExportService:
         if details:
             pdf.set_font("Helvetica", "I", 8)
             pdf.cell(0, 5, " | ".join(details), new_x="LMARGIN", new_y="NEXT")
+
+        # Enrichment details for insurance mode
+        if insurance_mode:
+            enrichment = []
+            if item.brand:
+                enrichment.append(f"Brand: {item.brand}")
+            if item.model_number:
+                enrichment.append(f"Model: {item.model_number}")
+            if item.serial_number:
+                enrichment.append(f"S/N: {item.serial_number}")
+            if item.material:
+                enrichment.append(f"Material: {item.material}")
+            if any([item.width_cm, item.height_cm, item.depth_cm]):
+                dims = f"{item.width_cm or 0:.0f}x{item.height_cm or 0:.0f}x{item.depth_cm or 0:.0f}cm"
+                enrichment.append(f"Dims: {dims}")
+            if item.purchase_date:
+                enrichment.append(f"Purchased: {item.purchase_date}")
+            if item.purchase_price:
+                enrichment.append(f"Paid: ${item.purchase_price:,.2f}")
+            if enrichment:
+                pdf.set_font("Helvetica", "", 7)
+                pdf.cell(0, 4, " | ".join(enrichment), new_x="LMARGIN", new_y="NEXT")
 
         pdf.ln(4)

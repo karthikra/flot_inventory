@@ -81,6 +81,66 @@
             <input type="hidden" name="items[{{ loop.index0 }}][is_book]" value="{{ 'true' if item.is_book else 'false' }}">
             <input type="hidden" name="items[{{ loop.index0 }}][voice_context]" value="{{ item.voice_context or '' }}">
 
+            <details class="product-details-section mt-8">
+                <summary class="card-subtitle" style="cursor:pointer; user-select:none">Product Details</summary>
+                <div class="card mt-4" style="background: var(--bg-secondary)">
+                    <div class="flex gap-8">
+                        <div class="form-group" style="flex:1">
+                            <label>Brand</label>
+                            <input type="text" name="items[{{ loop.index0 }}][brand]"
+                                   value="{{ item.brand or '' }}" class="form-control" placeholder="e.g. Sony">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>Model</label>
+                            <input type="text" name="items[{{ loop.index0 }}][model_number]"
+                                   value="{{ item.model_number or '' }}" class="form-control" placeholder="e.g. WH-1000XM5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Material</label>
+                        <input type="text" name="items[{{ loop.index0 }}][material]"
+                               value="{{ item.material or '' }}" class="form-control" placeholder="e.g. wood, metal, plastic">
+                    </div>
+                    <div class="flex gap-8">
+                        <div class="form-group" style="flex:1">
+                            <label>W (cm)</label>
+                            <input type="number" name="items[{{ loop.index0 }}][width_cm]"
+                                   value="{{ item.estimated_dimensions_cm.width if item.estimated_dimensions_cm else '' }}"
+                                   class="form-control" step="0.1" min="0">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>H (cm)</label>
+                            <input type="number" name="items[{{ loop.index0 }}][height_cm]"
+                                   value="{{ item.estimated_dimensions_cm.height if item.estimated_dimensions_cm else '' }}"
+                                   class="form-control" step="0.1" min="0">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>D (cm)</label>
+                            <input type="number" name="items[{{ loop.index0 }}][depth_cm]"
+                                   value="{{ item.estimated_dimensions_cm.depth if item.estimated_dimensions_cm else '' }}"
+                                   class="form-control" step="0.1" min="0">
+                        </div>
+                    </div>
+                    <div class="flex gap-8">
+                        <div class="form-group" style="flex:1">
+                            <label>Replacement Cost ($)</label>
+                            <input type="number" name="items[{{ loop.index0 }}][replacement_cost]"
+                                   class="form-control" step="0.01" min="0" placeholder="Current retail price">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>Purchase Price ($)</label>
+                            <input type="number" name="items[{{ loop.index0 }}][purchase_price]"
+                                   class="form-control" step="0.01" min="0" placeholder="What you paid">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Purchase Date</label>
+                        <input type="date" name="items[{{ loop.index0 }}][purchase_date]"
+                               class="form-control">
+                    </div>
+                </div>
+            </details>
+
             {% if item.is_book %}
             <div class="card mt-8" style="background: var(--bg-secondary)">
                 <div class="card-subtitle mb-8">Book Details</div>

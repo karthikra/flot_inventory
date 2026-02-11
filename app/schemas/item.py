@@ -42,6 +42,17 @@ class ItemCreate(BaseModel):
     status: ItemStatus | None = None
     source_type: str | None = None
     source_session_id: int | None = None
+    brand: str | None = None
+    model_number: str | None = None
+    serial_number: str | None = None
+    material: str | None = None
+    width_cm: float | None = None
+    height_cm: float | None = None
+    depth_cm: float | None = None
+    weight_kg: float | None = None
+    replacement_cost: float | None = None
+    purchase_date: str | None = None
+    purchase_price: float | None = None
 
 
 class ItemUpdate(BaseModel):
@@ -52,6 +63,17 @@ class ItemUpdate(BaseModel):
     estimated_value: float | None = None
     condition: Condition | None = None
     status: ItemStatus | None = None
+    brand: str | None = None
+    model_number: str | None = None
+    serial_number: str | None = None
+    material: str | None = None
+    width_cm: float | None = None
+    height_cm: float | None = None
+    depth_cm: float | None = None
+    weight_kg: float | None = None
+    replacement_cost: float | None = None
+    purchase_date: str | None = None
+    purchase_price: float | None = None
 
 
 class ItemImageOut(BaseModel):
@@ -77,6 +99,17 @@ class ItemOut(BaseModel):
     status: str | None
     source_type: str | None
     type: str
+    brand: str | None = None
+    model_number: str | None = None
+    serial_number: str | None = None
+    material: str | None = None
+    width_cm: float | None = None
+    height_cm: float | None = None
+    depth_cm: float | None = None
+    weight_kg: float | None = None
+    replacement_cost: float | None = None
+    purchase_date: str | None = None
+    purchase_price: float | None = None
     created_at: datetime
     updated_at: datetime
     images: list[ItemImageOut] = []

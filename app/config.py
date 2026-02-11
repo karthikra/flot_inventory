@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     openai_vision_api_key: str = ""
     openai_vision_model: str = "Qwen/Qwen2.5-VL-7B-Instruct"
     qwen_timeout: float = 300.0
+    serpapi_api_key: str = ""
     yolo_world_vocabulary: list[str] = [
         # Furniture
         "chair", "couch", "sofa", "table", "desk", "bed", "shelf", "bookshelf",

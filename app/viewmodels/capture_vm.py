@@ -444,6 +444,20 @@ class CaptureViewModel:
                     Path(ci.frame_path), room_name
                 )
 
+            # Common enrichment kwargs
+            enrichment = {
+                "brand": ci.brand,
+                "model_number": ci.model_number,
+                "material": ci.material,
+                "width_cm": ci.width_cm,
+                "height_cm": ci.height_cm,
+                "depth_cm": ci.depth_cm,
+                "weight_kg": ci.weight_kg,
+                "replacement_cost": ci.replacement_cost,
+                "purchase_date": ci.purchase_date,
+                "purchase_price": ci.purchase_price,
+            }
+
             if ci.is_book:
                 book = Book(
                     name=ci.name,
@@ -464,6 +478,7 @@ class CaptureViewModel:
                     publisher=ci.publisher,
                     genre=ci.genre,
                     voice_note=ci.voice_context,
+                    **enrichment,
                 )
                 session.add(book)
                 await session.flush()
@@ -482,6 +497,7 @@ class CaptureViewModel:
                     source_type="video_frame" if session_id else "image",
                     source_session_id=session_id,
                     voice_note=ci.voice_context,
+                    **enrichment,
                 )
                 saved.append(item)
 

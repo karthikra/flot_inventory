@@ -12,7 +12,7 @@ from app.schemas.capture import DetectedObject
 
 logger = logging.getLogger(__name__)
 
-# Prompt for Qwen2.5-VL requesting structured JSON with bounding boxes
+# Prompt for Qwen2.5-VL requesting structured JSON with bounding boxes + enrichment
 QWEN_PROMPT = """/nothink
 Identify every distinct object visible in this image.
 For each object, return a JSON object with these fields:
@@ -21,9 +21,13 @@ For each object, return a JSON object with these fields:
 - "category": one of [electronics, furniture, kitchenware, books, clothing, tools, decor, appliances, sports, toys, musical_instruments, other]
 - "is_book": true only if it's a book or printed material
 - "bbox_2d": [x1, y1, x2, y2] pixel coordinates of the bounding box
+- "brand": manufacturer or brand name if visible or identifiable (null if unknown)
+- "model_number": model name or number if visible (null if unknown)
+- "material": primary material (wood, metal, plastic, fabric, glass, ceramic, leather, etc.)
+- "estimated_dimensions_cm": {"width": W, "height": H, "depth": D} estimated in centimeters using nearby objects for scale
 
 Return ONLY a JSON array, no other text. Example:
-[{"name": "Black floor lamp", "description": "Tall adjustable metal floor lamp with matte black finish and fabric shade.", "category": "decor", "is_book": false, "bbox_2d": [120, 50, 340, 580]}]"""
+[{"name": "Sony WH-1000XM5 Headphones", "description": "Over-ear wireless noise-canceling headphones in black with padded ear cups.", "category": "electronics", "is_book": false, "bbox_2d": [120, 50, 340, 280], "brand": "Sony", "model_number": "WH-1000XM5", "material": "plastic", "estimated_dimensions_cm": {"width": 20, "height": 22, "depth": 10}}]"""
 
 # Category inference from YOLO-World vocabulary names
 _CATEGORY_KEYWORDS: dict[str, list[str]] = {
@@ -411,12 +415,20 @@ class LocalVisionService:
                 qwen_category = best_match.get("category", category)
                 is_book = best_match.get("is_book", class_name == "book")
                 final_confidence = min(1.0, (confidence + best_score) / 2)
+                brand = best_match.get("brand")
+                model_number = best_match.get("model_number")
+                material = best_match.get("material")
+                dims = best_match.get("estimated_dimensions_cm")
             else:
                 name = class_name.replace("_", " ").title()
                 description = f"Detected {class_name}"
                 qwen_category = category
                 is_book = class_name == "book"
                 final_confidence = confidence
+                brand = None
+                model_number = None
+                material = None
+                dims = None
 
             merged.append(DetectedObject(
                 name=name,
@@ -426,6 +438,10 @@ class LocalVisionService:
                 confidence=round(final_confidence, 2),
                 bounding_box=yolo_bbox,
                 voice_context=voice_context,
+                brand=brand,
+                model_number=model_number,
+                material=material,
+                estimated_dimensions_cm=dims,
             ))
 
         # Add Qwen-only objects (items YOLO-World missed) with their own bounding boxes
@@ -442,6 +458,10 @@ class LocalVisionService:
                 confidence=0.6,
                 bounding_box=bbox,
                 voice_context=voice_context,
+                brand=qobj.get("brand"),
+                model_number=qobj.get("model_number"),
+                material=qobj.get("material"),
+                estimated_dimensions_cm=qobj.get("estimated_dimensions_cm"),
             ))
 
         logger.info(

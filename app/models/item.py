@@ -32,6 +32,19 @@ class Item(Base, TimestampMixin):
     voice_note: Mapped[str | None] = mapped_column(Text)
     type: Mapped[str] = mapped_column(String(20), default="item")  # discriminator
 
+    # Product enrichment fields
+    brand: Mapped[str | None] = mapped_column(String(200))
+    model_number: Mapped[str | None] = mapped_column(String(200))
+    serial_number: Mapped[str | None] = mapped_column(String(200))
+    material: Mapped[str | None] = mapped_column(String(200))
+    width_cm: Mapped[float | None] = mapped_column(Float)
+    height_cm: Mapped[float | None] = mapped_column(Float)
+    depth_cm: Mapped[float | None] = mapped_column(Float)
+    weight_kg: Mapped[float | None] = mapped_column(Float)
+    replacement_cost: Mapped[float | None] = mapped_column(Float)
+    purchase_date: Mapped[str | None] = mapped_column(String(50))
+    purchase_price: Mapped[float | None] = mapped_column(Float)
+
     __mapper_args__ = {
         "polymorphic_identity": "item",
         "polymorphic_on": "type",

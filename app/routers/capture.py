@@ -332,6 +332,16 @@ async def confirm_items(request: Request, session: AsyncSession = Depends(get_se
             isbn=form.get(f"{prefix}[isbn]"),
             publisher=form.get(f"{prefix}[publisher]"),
             genre=form.get(f"{prefix}[genre]"),
+            brand=form.get(f"{prefix}[brand]") or None,
+            model_number=form.get(f"{prefix}[model_number]") or None,
+            material=form.get(f"{prefix}[material]") or None,
+            width_cm=float(v) if (v := form.get(f"{prefix}[width_cm]")) else None,
+            height_cm=float(v) if (v := form.get(f"{prefix}[height_cm]")) else None,
+            depth_cm=float(v) if (v := form.get(f"{prefix}[depth_cm]")) else None,
+            weight_kg=float(v) if (v := form.get(f"{prefix}[weight_kg]")) else None,
+            replacement_cost=float(v) if (v := form.get(f"{prefix}[replacement_cost]")) else None,
+            purchase_date=form.get(f"{prefix}[purchase_date]") or None,
+            purchase_price=float(v) if (v := form.get(f"{prefix}[purchase_price]")) else None,
         )
         items.append(item)
         idx += 1

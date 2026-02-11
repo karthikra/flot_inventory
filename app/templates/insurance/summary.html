@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Insurance Summary{% endblock %}
+
+{% block content %}
+<h1 class="mb-16">Insurance Summary</h1>
+
+<div class="card mb-16" style="text-align:center">
+    <div class="text-muted" style="font-size:0.85rem">Total Inventory Value</div>
+    <div class="value-display" style="font-size:2rem; font-weight:700">${{ "{:,.2f}".format(vm.total_value) }}</div>
+    <div class="text-muted" style="font-size:0.8rem; margin-top:4px">
+        {{ vm.total_items }} items
+        {% if vm.total_replacement > 0 %}
+        &middot; ${{ "{:,.2f}".format(vm.total_replacement) }} verified replacement cost
+        {% endif %}
+    </div>
+    <div class="flex gap-8 mt-16" style="justify-content:center">
+        <a href="/export/pdf?insurance=true" class="btn btn-primary btn-sm">Export Insurance PDF</a>
+        <a href="/export/csv" class="btn btn-secondary btn-sm">Export CSV</a>
+    </div>
+</div>
+
+{% if vm.by_room %}
+<div class="card mb-16">
+    <h3 class="mb-8">Value by Room</h3>
+    {% for room in vm.by_room %}
+    <div class="flex mb-8" style="justify-content:space-between; align-items:center">
+        <div>
+            <span style="font-weight:600">{{ room.name }}</span>
+            <span class="text-muted" style="font-size:0.8rem">({{ room.count }} items)</span>
+        </div>
+        <span style="font-weight:600">${{ "{:,.2f}".format(room.value) }}</span>
+    </div>
+    <div style="background:var(--bg-secondary); border-radius:4px; height:6px; margin-bottom:12px">
+        <div style="background:var(--accent); border-radius:4px; height:6px; width:{{ (room.value / vm.total_value * 100) if vm.total_value > 0 else 0 }}%"></div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if vm.by_category %}
+<div class="card mb-16">
+    <h3 class="mb-8">Value by Category</h3>
+    {% for cat in vm.by_category %}
+    <div class="flex mb-4" style="justify-content:space-between; align-items:center">
+        <div>
+            <span class="badge badge-category">{{ cat.name }}</span>
+            <span class="text-muted" style="font-size:0.8rem">{{ cat.count }} items</span>
+        </div>
+        <span style="font-weight:600; font-size:0.9rem">${{ "{:,.2f}".format(cat.value) }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if vm.high_value_items %}
+<div class="card mb-16">
+    <h3 class="mb-8">High-Value Items (&gt;$500)</h3>
+    <p class="text-muted" style="font-size:0.8rem; margin-bottom:8px">Ensure these have complete documentation for insurance claims.</p>
+    {% for item in vm.high_value_items %}
+    <div class="flex mb-8" style="justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border)">
+        <div>
+            <a href="/items/{{ item.id }}" style="font-weight:600">{{ item.name }}</a>
+            <span class="text-muted" style="font-size:0.8rem">&middot; {{ item.room }}</span>
+        </div>
+        <div class="flex gap-8" style="align-items:center">
+            <span style="font-weight:600">${{ "{:,.2f}".format(item.value) }}</span>
+            {% if item.documentation_complete %}
+            <span style="color:var(--success); font-size:0.8rem" title="Documentation complete">&#10003;</span>
+            {% else %}
+            <span style="color:var(--warning); font-size:0.8rem" title="Missing documentation">&#9888;</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if vm.missing_data_items %}
+<div class="card mb-16">
+    <h3 class="mb-8">Items Missing Data ({{ vm.missing_data_items | length }})</h3>
+    <p class="text-muted" style="font-size:0.8rem; margin-bottom:8px">Complete these for better insurance coverage.</p>
+    {% for item in vm.missing_data_items[:20] %}
+    <div class="flex mb-4" style="justify-content:space-between; align-items:center">
+        <a href="/items/{{ item.id }}" style="font-size:0.9rem">{{ item.name }}</a>
+        <div class="flex gap-4 flex-wrap" style="justify-content:flex-end">
+            {% for m in item.missing %}
+            <span class="badge" style="background:var(--bg-secondary); font-size:0.7rem">{{ m }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    {% if vm.missing_data_items | length > 20 %}
+    <div class="text-muted mt-8" style="font-size:0.8rem">... and {{ vm.missing_data_items | length - 20 }} more</div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
