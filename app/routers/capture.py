@@ -119,8 +119,15 @@ async def upload_image(
     room_name = room.name if room else "unsorted"
 
     image_data = await file.read()
+
+    # Optional audio for voice-enriched image capture
+    audio_data = None
+    audio_file = form.get("audio")
+    if audio_file and hasattr(audio_file, "read"):
+        audio_data = await audio_file.read()
+
     detected, image_path, thumb_path = await CaptureViewModel.process_image(
-        session, session_id, image_data, room_name
+        session, session_id, image_data, room_name, audio_data=audio_data
     )
 
     return request.app.state.templates.TemplateResponse(
@@ -196,6 +203,79 @@ async def upload_rapid_capture(
         {
             "request": request,
             "items": [obj.model_dump() for obj in detected],
+            "mode_switch": None,
+            "session_id": session_id,
+            "room_id": room_id,
+            "room_mentions": [m.model_dump() for m in room_mentions],
+        },
+    )
+
+
+@router.post("/scan/frame")
+async def scan_frame(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """Analyze a single scan frame. Returns JSON with detected objects."""
+    form = await request.form()
+    session_id = int(form["session_id"])
+
+    file = form.get("file")
+    image_data = await file.read()
+    detected, frame_path = await CaptureViewModel.process_scan_frame(
+        session, session_id, image_data
+    )
+
+    return JSONResponse({
+        "objects": [obj.model_dump() for obj in detected],
+        "frame_path": frame_path,
+    })
+
+
+@router.post("/scan/complete")
+async def scan_complete(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
+    """Finalize a scan session: save video, transcribe audio, deduplicate."""
+    form = await request.form()
+    session_id = int(form["session_id"])
+    room_id = int(form["room_id"])
+
+    # Optional video blob
+    video_data = None
+    video_file = form.get("video")
+    if video_file and hasattr(video_file, "read"):
+        video_data = await video_file.read()
+
+    # Optional audio blob
+    audio_data = None
+    audio_file = form.get("audio")
+    if audio_file and hasattr(audio_file, "read"):
+        audio_data = await audio_file.read()
+
+    # Accumulated items as JSON
+    items_json = json.loads(form.get("items", "[]"))
+
+    # Timestamps
+    timestamps: list[float] = json.loads(form.get("timestamps", "[]"))
+
+    # Get room name
+    from app.repositories.room_repo import RoomRepository
+    room_repo = RoomRepository(session)
+    room = await room_repo.get(room_id)
+    room_name = room.name if room else "unsorted"
+
+    deduplicated, room_mentions = await CaptureViewModel.process_scan_complete(
+        session, session_id, video_data, items_json, timestamps,
+        audio_data=audio_data, room_name=room_name,
+    )
+
+    return request.app.state.templates.TemplateResponse(
+        "capture/review.html",
+        {
+            "request": request,
+            "items": [obj.model_dump() for obj in deduplicated],
             "mode_switch": None,
             "session_id": session_id,
             "room_id": room_id,

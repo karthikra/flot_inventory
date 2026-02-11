@@ -12,7 +12,7 @@ class CaptureSession(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"))
     mode: Mapped[str] = mapped_column(
-        Enum("video", "image", "rapid", name="capture_mode_enum"), default="video"
+        Enum("video", "image", "rapid", "scan", name="capture_mode_enum"), default="video"
     )
     video_path: Mapped[str | None] = mapped_column(String(500))
     audio_path: Mapped[str | None] = mapped_column(String(500))

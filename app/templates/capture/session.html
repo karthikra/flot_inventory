@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Capture{% endblock %}
 {% block nav_capture %}active{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="/static/css/capture.css?v=2">{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="/static/css/capture.css?v=3">{% endblock %}
 
 {% block content %}
 <h1>Capture Items</h1>
@@ -26,7 +26,9 @@
         <input type="radio" name="mode" id="mode-image" value="image">
         <label for="mode-image">Image</label>
         <input type="radio" name="mode" id="mode-rapid" value="rapid">
-        <label for="mode-rapid">Rapid Capture</label>
+        <label for="mode-rapid">Rapid</label>
+        <input type="radio" name="mode" id="mode-scan" value="scan">
+        <label for="mode-scan">Scan</label>
     </div>
 
     <!-- Video Mode -->
@@ -63,6 +65,19 @@
             <p>Tap to take photo or upload</p>
             <input type="file" id="image-input" accept="image/*" capture="camera">
         </div>
+        <button type="button" class="image-mic-toggle" id="image-mic-toggle" title="Toggle voice narration">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+                <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            <span>Add voice</span>
+        </button>
+        <div id="image-audio-indicator" class="audio-indicator" style="display:none">
+            <span class="mic-icon"></span>
+            <span class="mic-label">Recording audio</span>
+        </div>
     </div>
 
     <!-- Rapid Capture Mode -->
@@ -85,6 +100,32 @@
         </p>
     </div>
 
+    <!-- Scan Mode -->
+    <div id="scan-mode" style="display:none">
+        <div class="video-preview" id="scan-preview">
+            <video id="scan-camera-feed" autoplay playsinline muted></video>
+            <div id="scan-audio-indicator" class="audio-indicator" style="display:none">
+                <span class="mic-icon"></span>
+                <span class="mic-label">Recording audio</span>
+            </div>
+            <div class="scan-controls">
+                <div class="scan-auto-badge" id="scan-auto-badge">Auto 10s</div>
+                <button class="snap-btn scan-snap-btn" id="scan-snap-btn" title="Manual Capture"></button>
+                <button class="rapid-done-btn" id="scan-done-btn" style="display:none">Done</button>
+            </div>
+        </div>
+        <div class="scan-results-panel" id="scan-results-panel">
+            <div class="scan-results-header">
+                <span class="scan-count-badge" id="scan-count-badge">0 items</span>
+                <span class="text-muted" style="font-size:0.8rem">Results appear as frames are analyzed</span>
+            </div>
+            <div class="scan-results-list" id="scan-results-list"></div>
+        </div>
+        <p class="text-muted" style="font-size:0.8rem; text-align:center; margin-top:8px">
+            Walk slowly through the room. Frames are captured every 10s and analyzed automatically. Tap Done when finished.
+        </p>
+    </div>
+
     <!-- Processing indicator -->
     <div id="processing" style="display:none">
         <div class="processing-overlay">
@@ -104,5 +145,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/capture.js?v=2"></script>
+<script src="/static/js/capture.js?v=3"></script>
 {% endblock %}

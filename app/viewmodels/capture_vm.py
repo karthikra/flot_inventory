@@ -95,13 +95,54 @@ class CaptureViewModel:
         session_id: int,
         image_data: bytes,
         room_name: str = "unsorted",
+        audio_data: bytes | None = None,
     ):
-        """Process a single image capture."""
+        """Process a single image capture, optionally with voice narration."""
+        import asyncio
+        import logging
+        import subprocess
+
         img_service = ImageService()
         image_path, thumb_path = await img_service.save_upload(image_data, room_name)
 
+        # Transcribe audio if provided
+        voice_context = None
+        if audio_data and len(audio_data) > 1000:
+            try:
+                tmp_dir = settings.data_dir / "tmp"
+                tmp_dir.mkdir(parents=True, exist_ok=True)
+                audio_raw = tmp_dir / f"img_audio_{uuid.uuid4().hex}.webm"
+                audio_wav = tmp_dir / f"img_audio_{uuid.uuid4().hex}.wav"
+                audio_raw.write_bytes(audio_data)
+
+                result = await asyncio.to_thread(
+                    subprocess.run,
+                    [
+                        "ffmpeg", "-y", "-i", str(audio_raw),
+                        "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+                        str(audio_wav),
+                    ],
+                    capture_output=True, text=True, timeout=120,
+                )
+                if result.returncode == 0 and audio_wav.exists():
+                    transcription_svc = TranscriptionService()
+                    transcript = await transcription_svc.transcribe(audio_wav)
+                    if transcript and transcript.full_text.strip():
+                        voice_context = transcript.full_text.strip()
+
+                # Clean up temp files
+                audio_raw.unlink(missing_ok=True)
+                audio_wav.unlink(missing_ok=True)
+            except Exception:
+                logging.getLogger(__name__).exception("Image audio transcription failed")
+
         vision = LocalVisionService()
-        detected = await vision.analyze_frame(image_path)
+        detected = await vision.analyze_frame(image_path, voice_context=voice_context)
+
+        # Attach voice context to all detected objects
+        if voice_context:
+            for obj in detected:
+                obj.voice_context = voice_context
 
         # check for books and try barcode scanning
         book_service = BookService()
@@ -238,6 +279,142 @@ class CaptureViewModel:
             await progress_callback("done", 1.0, f"Done! Identified {len(deduplicated)} unique items.", {
                 "items_found": len(deduplicated),
             })
+
+        return deduplicated, room_mentions
+
+    @classmethod
+    async def process_scan_frame(
+        cls,
+        session: AsyncSession,
+        session_id: int,
+        image_data: bytes,
+    ) -> tuple[list[DetectedObject], str]:
+        """Analyze a single scan frame. Returns (objects, frame_path)."""
+        scan_dir = settings.data_dir / "scan" / str(session_id)
+        scan_dir.mkdir(parents=True, exist_ok=True)
+
+        # Find next frame number
+        existing = list(scan_dir.glob("frame_*.jpg"))
+        frame_num = len(existing)
+        frame_path = scan_dir / f"frame_{frame_num:04d}.jpg"
+        frame_path.write_bytes(image_data)
+
+        vision = LocalVisionService()
+        detected = await vision.analyze_frame(str(frame_path))
+
+        # Attach frame_path to each object for review
+        for obj in detected:
+            if not obj.bounding_box:
+                obj.bounding_box = []
+
+        return detected, str(frame_path)
+
+    @classmethod
+    async def process_scan_complete(
+        cls,
+        session: AsyncSession,
+        session_id: int,
+        video_data: bytes | None,
+        items_json: list[dict],
+        timestamps: list[float],
+        audio_data: bytes | None = None,
+        room_name: str = "unsorted",
+    ) -> tuple[list[DetectedObject], list[RoomMention]]:
+        """Finalize a scan session: save video, transcribe audio, deduplicate items."""
+        import asyncio
+        import logging
+        import subprocess
+
+        # Save full video if provided
+        video_path = None
+        if video_data and len(video_data) > 1000:
+            video_dir = settings.data_dir / "videos"
+            video_dir.mkdir(parents=True, exist_ok=True)
+            video_path = video_dir / f"{uuid.uuid4().hex}.webm"
+            video_path.write_bytes(video_data)
+
+        # Transcribe audio if provided
+        transcript = None
+        room_mentions: list[RoomMention] = []
+        if audio_data and len(audio_data) > 1000:
+            try:
+                scan_dir = settings.data_dir / "scan" / str(session_id)
+                scan_dir.mkdir(parents=True, exist_ok=True)
+                audio_raw = scan_dir / "audio.webm"
+                audio_wav = scan_dir / "audio.wav"
+                audio_raw.write_bytes(audio_data)
+
+                result = await asyncio.to_thread(
+                    subprocess.run,
+                    [
+                        "ffmpeg", "-y", "-i", str(audio_raw),
+                        "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+                        str(audio_wav),
+                    ],
+                    capture_output=True, text=True, timeout=120,
+                )
+                if result.returncode == 0 and audio_wav.exists():
+                    transcription_svc = TranscriptionService()
+                    transcript = await transcription_svc.transcribe(audio_wav)
+                    room_mentions = transcription_svc.detect_room_mentions(transcript)
+            except Exception:
+                logging.getLogger(__name__).exception("Scan audio transcription failed")
+
+        # Build voice contexts per frame from timestamps
+        voice_contexts: dict[int, str] = {}
+        if transcript and timestamps:
+            transcription_svc = TranscriptionService()
+            frame_timestamps = [(i, ts) for i, ts in enumerate(timestamps)]
+            correlations = transcription_svc.correlate_all_frames(transcript, frame_timestamps)
+            for ctx in correlations:
+                if ctx.transcript_snippet.strip():
+                    voice_contexts[ctx.frame_index] = ctx.transcript_snippet
+
+        # Reconstruct DetectedObjects from accumulated JSON
+        all_objects: list[DetectedObject] = []
+        for item_dict in items_json:
+            obj = DetectedObject(**item_dict)
+            all_objects.append(obj)
+
+        # Build FrameAnalysisResults for dedup (group objects by frame_path)
+        frame_groups: dict[str, list[DetectedObject]] = {}
+        for obj_dict, obj in zip(items_json, all_objects):
+            fp = obj_dict.get("frame_path", "")
+            frame_groups.setdefault(fp, []).append(obj)
+
+        frame_results: list[FrameAnalysisResult] = []
+        for i, (fp, objs) in enumerate(frame_groups.items()):
+            vc = voice_contexts.get(i)
+            if vc:
+                for obj in objs:
+                    if not obj.voice_context:
+                        obj.voice_context = vc
+            frame_results.append(FrameAnalysisResult(
+                frame_index=i,
+                frame_path=fp,
+                objects=objs,
+                frame_timestamp=timestamps[i] if i < len(timestamps) else 0.0,
+                voice_context=vc,
+            ))
+
+        # Deduplicate
+        vision = LocalVisionService()
+        processor = VideoProcessor(vision)
+        deduplicated = processor._deduplicate_objects(frame_results)
+
+        # Update capture session
+        capture = await session.get(CaptureSession, session_id)
+        if capture:
+            capture.items_found = len(deduplicated)
+            capture.frame_count = len(frame_results)
+            capture.completed_at = datetime.now()
+            if video_path:
+                capture.video_path = str(video_path)
+            if transcript:
+                capture.has_audio = True
+                capture.transcript_text = transcript.full_text
+                capture.transcript_json = transcript.model_dump_json()
+            await session.commit()
 
         return deduplicated, room_mentions
 
