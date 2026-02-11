@@ -9,7 +9,7 @@ from sqlalchemy import text
 
 from app.database import engine
 from app.models import Base
-from app.routers import capture, dashboard, export, insurance, items, rooms, search
+from app.views import capture, dashboard, export, insurance, items, rooms, search
 
 logger = logging.getLogger(__name__)
 
