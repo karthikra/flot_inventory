@@ -19,6 +19,14 @@ data/
 # OS
 .DS_Store
 
+# TLS certs (Tailscale)
+*.crt
+*.key
+
+# Model weights
+*.pt
+*.onnx
+
 #ignore claude
 claude/
 .claude

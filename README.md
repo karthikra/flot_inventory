@@ -21,10 +21,10 @@ Tailscale gives you HTTPS with a trusted cert — camera and mic access work out
 ### 1. Generate the HTTPS cert (one time)
 
 ```bash
-tailscale cert pro.tail375484.ts.net
+tailscale cert <your-hostname>.ts.net
 ```
 
-This creates `pro.tail375484.ts.net.crt` and `pro.tail375484.ts.net.key` in the current directory.
+This creates `<your-hostname>.ts.net.crt` and `<your-hostname>.ts.net.key` in the current directory.
 
 ### 2. Start the server
 
@@ -32,16 +32,16 @@ This creates `pro.tail375484.ts.net.crt` and `pro.tail375484.ts.net.key` in the 
 .venv/bin/uvicorn app.main:app \
   --host 0.0.0.0 \
   --port 8443 \
-  --ssl-keyfile pro.tail375484.ts.net.key \
-  --ssl-certfile pro.tail375484.ts.net.crt
+  --ssl-keyfile <your-hostname>.ts.net.key \
+  --ssl-certfile <your-hostname>.ts.net.crt
 ```
 
-### 3. Open on your iPhone
+### 3. Open on your phone
 
 Make sure Tailscale is connected on your phone, then open:
 
 ```
-https://pro.tail375484.ts.net:8443
+https://<your-hostname>.ts.net:8443
 ```
 
 No cert warnings, camera works, accessible from anywhere on your tailnet.
@@ -49,12 +49,3 @@ No cert warnings, camera works, accessible from anywhere on your tailnet.
 ### Add to Home Screen (optional)
 
 In Safari: Share button > "Add to Home Screen" for an app-like experience.
-
-### Quick reference
-
-| What | Value |
-|---|---|
-| Tailscale IP | `100.88.194.45` |
-| MagicDNS name | `pro.tail375484.ts.net` |
-| URL | `https://pro.tail375484.ts.net:8443` |
-| Fallback (HTTP, no camera) | `http://100.88.194.45:8000` |
