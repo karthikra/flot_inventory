@@ -23,6 +23,9 @@ data/
 *.crt
 *.key
 
+# Local setup docs (contains private addresses)
+SETUP.md
+
 # Model weights
 *.pt
 *.onnx
