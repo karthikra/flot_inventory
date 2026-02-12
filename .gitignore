@@ -33,3 +33,6 @@ SETUP.md
 #ignore claude
 claude/
 .claude
+
+#ignore notebooks
+notebooks/*
